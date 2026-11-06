@@ -20,10 +20,10 @@ def load_questions(filename):
     assert len({q['id'] for q in questions}) == len(questions)
     return {q['id']: q for q in questions}
 
-BANKS = {'ru': load_questions('questions.json'), 'en': load_questions('questions_en.json')}
-assert set(BANKS['ru']) == set(BANKS['en']), 'RU and EN question IDs differ'
+BANKS = {'ru': load_questions('questions.json'), 'en': load_questions('questions_en.json'), 'pl': load_questions('questions_pl.json')}
+assert all(set(BANKS['ru']) == set(bank) for bank in BANKS.values()), 'Question IDs differ between languages'
 for qid in BANKS['ru']:
-    assert BANKS['ru'][qid].get('image') == BANKS['en'][qid].get('image'), f'Image mismatch: {qid}'
+    assert all(BANKS['ru'][qid].get('image') == bank[qid].get('image') for bank in BANKS.values()), f'Image mismatch: {qid}'
 
 LANGUAGES = {}
 sessions = {}
@@ -42,6 +42,19 @@ T = {
         'correct': '✅ Правильно!', 'incorrect': '❌ Неправильно.',
         'correct_answer': 'Правильный ответ:', 'session_finished': 'Сессия завершена.',
         'total_answers': 'Всего ответов', 'mistakes_count': 'Вопросов в «Мои ошибки»',
+    },
+    'pl': {
+        'welcome': '🚛 ADR Test Pro\n\nKurs podstawowy ADR\n\nWybierz tryb nauki:',
+        'choose_language': '🌐 Wybierz język:',
+        'training': '📚 Trening', 'all': '🎯 Wszystkie pytania', 'mistakes': '❌ Moje błędy',
+        'exam': '📝 Egzamin', 'stats': '📊 Statystyki', 'language': '🌐 Język',
+        'next': '➡️ Następne', 'home': '🏠 Menu główne', 'question': 'Pytanie',
+        'choose_mode': 'Najpierw wybierz tryb.', 'empty': 'W tym trybie nie ma jeszcze pytań.',
+        'finished': '🏁 Test zakończony!', 'right': '✅ Poprawne', 'wrong': '❌ Błędne',
+        'result': '📊 Wynik', 'exam_mistakes': 'Błędy na egzaminie:',
+        'correct': '✅ Poprawnie!', 'incorrect': '❌ Niepoprawnie.',
+        'correct_answer': 'Poprawna odpowiedź:', 'session_finished': 'Sesja zakończona.',
+        'total_answers': 'Łącznie odpowiedzi', 'mistakes_count': 'Pytania w „Moich błędach”',
     },
     'en': {
         'welcome': '🚛 ADR Test Pro\n\nADR Basic Course\n\nChoose a practice mode:',
@@ -67,7 +80,8 @@ def tr(chat_id, key):
 def language_menu():
     kb = types.InlineKeyboardMarkup(row_width=2)
     kb.add(types.InlineKeyboardButton('🇷🇺 Русский', callback_data='lang:ru'),
-           types.InlineKeyboardButton('🇬🇧 English', callback_data='lang:en'))
+           types.InlineKeyboardButton('🇬🇧 English', callback_data='lang:en'),
+           types.InlineKeyboardButton('🇵🇱 Polski', callback_data='lang:pl'))
     return kb
 
 def main_menu(chat_id):
@@ -246,5 +260,5 @@ def callback(call):
         bot.send_message(chat_id, result, reply_markup=next_keyboard(chat_id))
 
 if __name__ == '__main__':
-    print(f"ADR bot started. Loaded {len(BANKS['ru'])} RU and {len(BANKS['en'])} EN questions.")
+    print('ADR bot started. Loaded: ' + ', '.join(f'{lang.upper()}={len(bank)}' for lang, bank in BANKS.items()))
     bot.infinity_polling(skip_pending=True)
